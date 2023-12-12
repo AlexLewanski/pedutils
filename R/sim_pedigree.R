@@ -94,6 +94,10 @@
 #                  include the following columns in the specified order:
 #                  'id', 'sex', 'birth_year', 'age'
 #
+
+
+
+
 # cycles
 #   default: 5 (accepts integer values)
 #   description: the number years/reproduction cycles
@@ -196,31 +200,6 @@
 ### PEDIGREE SIMULATION  MAIN FUNCTION ###
 ##########################################
 
-#' Simulate simple population and record pedigree
-#'
-#' @param founders
-#' @param cycles
-#' @param start_year
-#' @param age_mort_horizontal_shift
-#' @param age_mort_slope
-#' @param max_hatchling_survive_prob
-#' @param prob_pair
-#' @param pair_up_order
-#' @param min_age_reproduction
-#' @param add_immigrants
-#' @param immigrant_vec
-#' @param immigrant_age
-#' @param immigrant_prob
-#' @param founder_age_lambda
-#' @param offspring_lambda
-#' @param safeguard
-#' @param max_pop
-#' @param report_progress
-#'
-#' @return
-#' @export
-#'
-#' @examples
 sim_simple_ped <- function(founders = 20,
                            cycles = 5,
                            start_year = 2020,
@@ -395,9 +374,35 @@ sim_simple_ped <- function(founders = 20,
   return(pop_df)
 }
 
-sim_ped_repeat_attempt <- function(attempts = 10,
-                                   founders = 20,
-                                   cycles = 5,
+#' Simulate a simple population and record pedigree
+#'
+#' @param attempts If the simulation "fails" (the population goes extinct before the number of cycles), attempts is the number of times to retry the simulation to achieve success.
+#' @param founders Specifications for the founders of the population. The user can either input the founders or have the function generate founders by inputting an integer, which defines the the number of founders to create. If the user wants to input the founders, the dataframe needs to include the following columns in the specified order: 'id', 'sex', 'birth_year', 'age'
+#' @param cycles The number of years/reproduction cycles (accepts an integer value; default = 5).
+#' @param start_year The starting year of the population (accepts an integer value; default 2020).
+#' @param age_mort_horizontal_shift This is equivalent to the beta0 term in a logistic regression. age_mort_horizontal_shift shifts the horizontal location of the transition from low to high probability (or vice versa) with smaller values shifting the curve to the right (default = -1.5).
+#' @param age_mort_slope This is equivalent to the beta1 term in a logistic regression. age_mort_slope alters the slope of function with higher values resulting in a more severe transition from low to high probability (or vice versa).
+#' @param max_hatchling_survive_prob Maximum probability of hatchling survival. This is the survival probability when the population size is 0 (numeric value between 0 and 1; default = 0.8  numeric between 0 and 1).
+#' @param prob_pair Probability of mating each year for the sex that is first chosen for mating (currently age independent)
+#' @param pair_up_order The order in which the sexes are paired up. 'f_to_m' chooses females first and then pairs them (with replacement) with males. 'm_to_f' does the opposite
+#' @param min_age_reproduction The minimum age threshold for possible reproduction. For example, an age of 1 means that all individuals can potentially reproduce the year after they are born
+#' @param add_immigrants How and whether migrants should be added to the population. There are 3 options: (1) none: no migrants are added (2) random: for each cycle, the number of migrants is drawn from a poisson distribution parameterized with founder_age_lambda (3) custom: the user provides the number of migrants for each cycle using the immigrant_vec argument.
+#' @param immigrant_vec A vector containing the number of migrants for each cycle. The vector needs to be the same length as the number of cycles. This argument is only relevant when add_immigrants is set to custom.
+#' @param immigrant_age What age should the immigrants be considered (this could be made more flexible)
+#' @param immigrant_prob The poisson lambda value for determine the number of migrants to add each cycle.
+#' @param founder_age_lambda The poisson lambda value for determining age of founders when add_immigrants is set to random.
+#' @param offspring_lambda The poisson value for the number of offspring for each breeding pair.
+#' @param safeguard If the population size exceeds this value, the simulation will be halted this is included to prevent a population explosion. NOTE: this is largely superfluous now because of population regulation via max_pop.
+#' @param max_pop The population carrying capacity, which is used to determine offspring survival. This is used for population size regulation.
+#' @param report_progress Specifies whether the function should report the progress of the simulation.
+#'
+#' @return A dataframe containing the population simulation output.
+#' @export
+#'
+#' @examples
+sim_ped_repeat_attempt <- function(attempts = 10L,
+                                   founders = 20L,
+                                   cycles = 5L,
                                    start_year = 2020,
                                    age_mort_horizontal_shift = -1.5,
                                    age_mort_slope = 0.425,
@@ -567,14 +572,14 @@ rbind_empty_handle <- function(df1, df2) {
 
 #' Plot survival probability
 #'
-#' @param age_mort_horizontal_shift
-#' @param age_mort_slope
-#' @param min_plotting_age
-#' @param max_plotting_age
-#' @param max_pop
-#' @param max_hatchling_survive_prob
+#' @param age_mort_horizontal_shift This is equivalent to the beta0 term in a logistic regression. age_mort_horizontal_shift shifts the horizontal location of the transition from low to high probability (or vice versa) with smaller values shifting the curve to the right (default = -1.5).
+#' @param age_mort_slope This is equivalent to the beta1 term in a logistic regression. age_mort_slope alters the slope of function with higher values resulting in a more severe transition from low to high probability (or vice versa).
+#' @param min_plotting_age The minimum age to include in the plot.
+#' @param max_plotting_age The maximum age to include in the plot.
+#' @param max_pop The population carrying capacity, which is used to determine offspring survival. This is used for population size regulation.
+#' @param max_hatchling_survive_prob Maximum probability of hatchling survival. This is the survival probability when the population size is 0.
 #'
-#' @return
+#' @return A plot (ggplot object) visualizing the relationship between age and survival probability.
 #' @import dplyr
 #' @import ggplot2
 #' @importFrom rlang .data
@@ -621,11 +626,11 @@ survival_explanatory_vis <- function(age_mort_horizontal_shift = -1.5,
 
 #' Extract pedigree from population simulation
 #'
-#' @param ped_sim_output
-#' @param remove_nonbreeding_founders
-#' @param pedtools_format
+#' @param ped_sim_output Population simulation output from the sim_ped_repeat_attempt function.
+#' @param remove_nonbreeding_founders Logical (TRUE or FALSE) indicating whether to remove founders from the population that didn't have any offspring.
+#' @param pedtools_format Logical (TRUE or FALSE) indicating whether to output the pedigree in pedtools format.
 #'
-#' @return
+#' @return A dataframe containing pedigree information.
 #' @import dplyr
 #' @importFrom rlang .data
 #' @export
@@ -663,7 +668,7 @@ extract_ped <- function(ped_sim_output,
       dplyr::rename(fid = .data$sire, mid = .data$dam)
   }
 
-  return(ped_filter)
+  return(as.data.frame(ped_filter))
 }
 
 

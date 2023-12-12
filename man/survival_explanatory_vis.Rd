@@ -14,7 +14,20 @@ survival_explanatory_vis(
 )
 }
 \arguments{
-\item{max_hatchling_survive_prob}{}
+\item{age_mort_horizontal_shift}{This is equivalent to the beta0 term in a logistic regression. age_mort_horizontal_shift shifts the horizontal location of the transition from low to high probability (or vice versa) with smaller values shifting the curve to the right (default = -1.5).}
+
+\item{age_mort_slope}{This is equivalent to the beta1 term in a logistic regression. age_mort_slope alters the slope of function with higher values resulting in a more severe transition from low to high probability (or vice versa).}
+
+\item{min_plotting_age}{The minimum age to include in the plot.}
+
+\item{max_plotting_age}{The maximum age to include in the plot.}
+
+\item{max_pop}{The population carrying capacity, which is used to determine offspring survival. This is used for population size regulation.}
+
+\item{max_hatchling_survive_prob}{Maximum probability of hatchling survival. This is the survival probability when the population size is 0.}
+}
+\value{
+A plot (ggplot object) visualizing the relationship between age and survival probability.
 }
 \description{
 Plot survival probability

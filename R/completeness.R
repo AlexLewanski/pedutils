@@ -22,41 +22,48 @@ calc_max_gen <- function(ped, indiv = 'all') {
 }
 
 calc_total_gen <- function(complete_info) {
-  return(
-    stats::aggregate(generation ~ id,
-                     data = complete_info,
-                     FUN = max,
-                     simplify = TRUE)[, 2, drop = TRUE]
-  )
+
+  #the output for aggregate gets sorted based on the order of id, which could
+  #be a different order than the input order in complete_info.
+  tgen_df <- stats::aggregate(generation ~ id,
+                              data = complete_info,
+                              FUN = max,
+                              simplify = TRUE)#[, 2, drop = TRUE]
+
+  return(tgen_df[match(unique(complete_info$id), tgen_df$id),2, drop = TRUE])
 }
 
 
 calc_equiv_gen <- function(complete_info) {
-  return(
-    stats::aggregate(completeness ~ id,
-                     data = complete_info,
-                     FUN = function(x) sum(x) - 1,
-                     simplify = TRUE)[, 2, drop = TRUE]
-  )
+  eqg_df <- stats::aggregate(completeness ~ id,
+                             data = complete_info,
+                             FUN = function(x) sum(x) - 1,
+                             simplify = TRUE)#[, 2, drop = TRUE]
+
+  return(eqg_df[match(unique(complete_info$id), eqg_df$id),2, drop = TRUE])
 }
 
 
 calc_complete_gen <- function(complete_info) {
   #dplyr::filter(complete_info, abs(1 - completeness) <= .Machine$double.eps),
-  return(
-    stats::aggregate(generation ~ id,
-                     complete_info[abs(1 - complete_info$completeness) <= .Machine$double.eps,],
-                     FUN = max)[, 2, drop = TRUE]
-  )
+
+  compl_df <- stats::aggregate(generation ~ id,
+                               complete_info[abs(1 - complete_info$completeness) <= .Machine$double.eps,],
+                               FUN = max)#[, 2, drop = TRUE]
+
+  return(compl_df[match(unique(complete_info$id), compl_df$id),2, drop = TRUE])
 }
 
 calc_mean_compl <- function(complete_info, gen = 1) {
   #dplyr::filter(complete_info,generation <= (gen - 1)),
-  return(
-    stats::aggregate(completeness ~ id,
+
+    compl_df <- stats::aggregate(completeness ~ id,
                      complete_info[complete_info$generation <= (gen - 1),],
-                     FUN = function(x) (sum(x))/gen)[, 2, drop = TRUE]
-  )
+                     FUN = function(x) (sum(x))/gen)
+
+  return(compl_df[match(unique(complete_info$id), compl_df$id),2, drop = TRUE])
+
+
 }
 
 calc_compl_index <- function(ped, complete_info, gen = 1) {
@@ -70,8 +77,8 @@ calc_compl_index <- function(ped, complete_info, gen = 1) {
 
   #add extra columns that contain the parents' mean completeness values for each indiv
   #col 1 --> id; col 2 --> sire id; col3 --> dam id
-  ped$sire_meancompl <- ped$mean_compl[match(ped[,2,drop = TRUE], ped[,1,drop = TRUE])]
-  ped$dam_meancompl <- ped$mean_compl[match(ped[,3,drop = TRUE], ped[,1,drop = TRUE])]
+  ped$sire_meancompl <- ped$mean_compl[match(ped[,2, drop = TRUE], ped[,1, drop = TRUE])]
+  ped$dam_meancompl <- ped$mean_compl[match(ped[,3, drop = TRUE], ped[,1, drop = TRUE])]
 
   #add 0s for the mean parental completeness vals for indivs w/out known parents
   ped$sire_meancompl[is.na(ped$sire_meancompl)] <- 0
@@ -100,7 +107,7 @@ calc_completeness <- function(ped, id = 'all', max_gen = 'all') {
 
   ### ARGUMENT CHECKS AND PROCESSING ###
   if (identical(max_gen, 'all')) max_gen <- Inf #set max_gen to inf if no max_gen is given
-  if (identical('all', id)) id <- ped[,1,drop=TRUE] #if id = all, calc completeness for all indivs
+  if (identical('all', id)) id <- ped[,1, drop = TRUE] #if id = all, calc completeness for all indivs
   #create empty list to store each individuals completeness df
   df_list <- list()
 
@@ -176,4 +183,10 @@ ped_summary_stats <- function(ped,
 
   return(summary_df)
 }
+
+### REFERENCES ###
+#MacCluer et al. (1983) Inbreeding and pedigree structure in Standardbred horses
+#https://github.com/cran/optiSel/blob/master/R/summary.Pedig.R
+#https://github.com/cran/optiSel/blob/master/src/rcpp_completeness.cpp
+#https://cran.r-project.org/web/packages/optiSel/vignettes/ped-vignette.html#quality-control
 

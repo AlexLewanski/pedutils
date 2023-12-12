@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_pedigree.R
 \name{extract_ped}
 \alias{extract_ped}
-\title{Title}
+\title{Extract pedigree from population simulation}
 \usage{
 extract_ped(
   ped_sim_output,
@@ -11,8 +11,15 @@ extract_ped(
 )
 }
 \arguments{
-\item{pedtools_format}{}
+\item{ped_sim_output}{Population simulation output from the sim_ped_repeat_attempt function.}
+
+\item{remove_nonbreeding_founders}{Logical (TRUE or FALSE) indicating whether to remove founders from the population that didn't have any offspring.}
+
+\item{pedtools_format}{Logical (TRUE or FALSE) indicating whether to output the pedigree in pedtools format.}
+}
+\value{
+A dataframe containing pedigree information.
 }
 \description{
-Title
+Extract pedigree from population simulation
 }
