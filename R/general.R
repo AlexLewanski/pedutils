@@ -6,14 +6,28 @@ harmonic_mean <- function(x) length(x)/sum(1/x)
 #######################################
 ### PEDIGREE MANIPULATON AND CHECKS ###
 #######################################
-reorder_ped <- function(ped) {
+#' Reorder pedigree so that all offspring follow their parents
+#'
+#' @param ped a pedigree
+#' @param id_col name or index of id column
+#' @param sire_col name or index of sire column
+#' @param dam_col name or index of dam column
+#'
+#' @return
+#' @export
+#'
+#' @examples
+reorder_ped <- function(ped,
+                        id_col,
+                        sire_col,
+                        dam_col) {
 
   #Zhang et al. 2009
   #An algorithm to sort complex pedigrees chronologically without birthdates
 
-  id_ind <- seq_along(ped$id)
-  id_sire <- match(ped$fid, ped$id)
-  id_dam <- match(ped$mid, ped$id)
+  id_ind <- seq_along(ped[[id_col]])
+  id_sire <- match(ped[[sire_col]], ped[[id_col]])
+  id_dam <- match(ped[[dam_col]], ped[[id_col]])
 
   gen_vec <- rep(0, nrow(ped))
 
