@@ -215,9 +215,9 @@ inbr_from_kinmat <- function(ped,
 #'
 #' @return a list that contains a list of partial coancestry matrices and a dataframe of partial inbreeding values
 #' @import stats
+#' @import dplyr
 #' @export
 #'
-#'#' @importFrom stats .data
 partial_inbreeding <- function(ped,
                                id_col = 1,
                                sire_col = 2,

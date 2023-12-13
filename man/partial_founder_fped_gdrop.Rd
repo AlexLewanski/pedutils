@@ -7,7 +7,7 @@
 partial_founder_fped_gdrop(gdrop_output)
 }
 \arguments{
-\item{gdrop_output}{output from the simple_gene_drop function}
+\item{gdrop_output}{output from the simple_gene_drop function (specifically, the geno_origin dataframe)}
 }
 \value{
 a dataframe containing each individual's inbreeding values contributed by each founder

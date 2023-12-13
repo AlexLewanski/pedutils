@@ -13,10 +13,9 @@ harmonic_mean <- function(x) length(x)/sum(1/x)
 #' @param sire_col name or index of sire column
 #' @param dam_col name or index of dam column
 #'
-#' @return
+#' @return a pedigree ordered so that offspring follow their parents
 #' @export
 #'
-#' @examples
 reorder_ped <- function(ped,
                         id_col,
                         sire_col,
@@ -57,9 +56,23 @@ reorder_ped <- function(ped,
 }
 
 
-check_order_ped <- function(ped) {
-  fid_index <- match(ped[,2,drop = TRUE], ped[,1,drop = TRUE])
-  mid_index <- match(ped[,3,drop = TRUE], ped[,1,drop = TRUE])
+#' Evaluate whether the pedigree is ordered. NOTE: this has not been thoroughly vetted.
+#'
+#' @param ped a ped
+#' @param id_col name or index of id column
+#' @param sire_col name or index of sire column
+#' @param dam_col name or index of dam column
+#'
+#' @return A logical value indicating whether or not the pedigree is ordered with offspring after parents.
+#' @export
+#'
+check_order_ped <- function(ped,
+                            id_col,
+                            sire_col,
+                            dam_col) {
+
+  fid_index <- match(ped[[sire_col]], ped[[id_col]])
+  mid_index <- match(ped[[dam_col]], ped[[id_col]])
 
   for (i in seq_len(nrow(ped))) {
     if (isTRUE(i < fid_index[i]) | isTRUE(i < mid_index[i])) {

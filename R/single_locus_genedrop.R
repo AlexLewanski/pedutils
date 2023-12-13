@@ -27,6 +27,7 @@
 #'
 #' @return a list of simulation output
 #' @import tibble
+#' @import stats
 #' @export
 #'
 simple_gene_drop <- function(ped,
