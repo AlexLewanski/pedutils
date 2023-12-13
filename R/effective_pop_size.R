@@ -1,3 +1,5 @@
+
+#' @import stats
 calc_Ne_f <- function(f, eqg) {
   delF <- 1 - ((1 - f)^(1/(eqg - 1)))
   Ne <- 1/(2*mean(delF))
@@ -23,6 +25,7 @@ wrapper_Ne_f <- function(id, ped, kin_mat, f_info = NULL, eqg_info) {
 }
 
 
+#' @import stats
 calc_Ne_c <- function(coanc, mean_eqg) {
   delCoanc <- 1 - ((1 - coanc)^(1/mean_eqg))
   Ne <- 1/(2*mean(delCoanc))
@@ -33,6 +36,7 @@ calc_Ne_c <- function(coanc, mean_eqg) {
 }
 
 
+#' @import utils
 wrapper_Ne_c <- function(id, coanc_mat, eqg_info, max_compar = 100000) {
 
   id_pairs <- t(utils::combn(id, 2))
@@ -63,10 +67,8 @@ wrapper_Ne_c <- function(id, coanc_mat, eqg_info, max_compar = 100000) {
 #' @param eqg A dataframe containing information on effective number of generations for each individual. The dataframe must include a column named "id" with id of each individual and a column named "equiv_gen," which records the equivalent number of generations for each individual. If this is not supplied, the number of equivalent generations will be calculated internally.
 #' @param max_compar The number coancestry values to be considered in the calculation of Ne. If the number of values is higher than max_compar, then the coancestry values will be randomly subsampled down to max_compar. This argument is only considered for the "Ne_c" estimator of Ne.
 #'
-#' @return
+#' @return a list containing the Ne estimates and standard errors
 #' @export
-#'
-#' @examples
 calc_ped_Ne <- function(ped,
                         Ne = c('Ne_f', 'Ne_c'),
                         id = 'all',

@@ -2,7 +2,7 @@
 % Please edit documentation in R/single_locus_genedrop.R
 \name{simple_gene_drop}
 \alias{simple_gene_drop}
-\title{Title}
+\title{Single locus gene drop on a pedigree}
 \usage{
 simple_gene_drop(
   ped,
@@ -18,8 +18,29 @@ simple_gene_drop(
 )
 }
 \arguments{
-\item{report_progress}{}
+\item{ped}{pedigree on which to perform gene drop}
+
+\item{id_col}{name or index of id column}
+
+\item{sire_col}{name or index of sire column}
+
+\item{dam_col}{name or index of dam column}
+
+\item{sex_col}{name or index of sex column}
+
+\item{sims}{number of gene drop simulations}
+
+\item{pop_freq}{the frequency of the allele in the starting population}
+
+\item{fixed_founder_genotypes}{should founder genotypes be fixed?}
+
+\item{calc_contribution}{should the ancestry contributions of each founder be recorded?}
+
+\item{report_progress}{should the simulation progress be shown?}
+}
+\value{
+a list of simulation output
 }
 \description{
-Title
+Single locus gene drop on a pedigree
 }

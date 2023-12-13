@@ -29,6 +29,9 @@ calc_ped_Ne(
 
 \item{max_compar}{The number coancestry values to be considered in the calculation of Ne. If the number of values is higher than max_compar, then the coancestry values will be randomly subsampled down to max_compar. This argument is only considered for the "Ne_c" estimator of Ne.}
 }
+\value{
+a list containing the Ne estimates and standard errors
+}
 \description{
 Calculate effective population size from a pedigree
 }

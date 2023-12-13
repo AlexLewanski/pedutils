@@ -94,7 +94,6 @@ sex_eval_internal <- function(processed_ped) {
 #' @return A processed pedigree stored as a dataframe.
 #' @export
 #'
-#' @examples
 process_ped <- function(ped,
                         id_col,
                         sire_col,

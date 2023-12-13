@@ -57,9 +57,51 @@ check_order_ped <- function(ped) {
 
 
 
+########################################
+### MISCELLANEOUS PEDIGREE FUNCTIONS ###
+########################################
+
+#' Switch character IDs to numeric (for the ID, sire, and dam columns)
+#'
+#' @param ped pedigree
+#' @param id_col name or index of id column
+#' @param sire_col name or index of sire column
+#' @param dam_col name or index of dam column
+#' @param founder_val the value that represents a founder in the sire and dam cols
+#'
+#' @return a pedigree stored in a dataframe with updated individual ID values
+#' @import dplyr
+#' @export
+#'
+character2numeric_id <- function(ped, id_col, sire_col, dam_col, founder_val = 0) {
+
+  id_map <- data.frame(unique(ped[,id_col, drop = TRUE]),
+                       seq_along(unique(ped[,id_col, drop = TRUE])))
+
+  for (i in c(id_col, sire_col, dam_col)) {
+    colnames(id_map) <- c(i, paste0(i, '_numeric'))
+    ped <- dplyr::left_join(ped, id_map, by = i)
+    ped[,paste0(i, '_numeric')][is.na(ped[,paste0(i, '_numeric')])] <- founder_val
+  }
+
+  return(ped)
+}
+
+
+
+
 #######################################
 ### EXTRACTION OF PEDIGREE ELEMENTS ###
 #######################################
+#' Extract ancestors for one or more individuals
+#'
+#' @param ped a pedigree object
+#' @param indiv_vec the individuals that for which to extract ancestors
+#' @param include_repeats if individuals are duplicate ancestors, should duplicates be removed?
+#'
+#' @return a vector of ancestors
+#' @export
+#'
 get_ancestors <- function(ped, indiv_vec, include_repeats = TRUE) {
 
   #if (any(c('tbl_df', "tbl") %in% class(ped))) ped <- as.data.frame(ped)

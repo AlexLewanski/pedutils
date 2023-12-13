@@ -1,3 +1,4 @@
+#' @import stats
 calc_max_gen <- function(ped, indiv = 'all') {
 
   if (identical('all', indiv)) indiv <- ped[, 1, drop = TRUE]
@@ -21,6 +22,7 @@ calc_max_gen <- function(ped, indiv = 'all') {
   return(max_gen_vec)
 }
 
+#' @import stats
 calc_total_gen <- function(complete_info) {
 
   #the output for aggregate gets sorted based on the order of id, which could
@@ -33,7 +35,7 @@ calc_total_gen <- function(complete_info) {
   return(tgen_df[match(unique(complete_info$id), tgen_df$id),2, drop = TRUE])
 }
 
-
+#' @import stats
 calc_equiv_gen <- function(complete_info) {
   eqg_df <- stats::aggregate(completeness ~ id,
                              data = complete_info,
@@ -43,7 +45,7 @@ calc_equiv_gen <- function(complete_info) {
   return(eqg_df[match(unique(complete_info$id), eqg_df$id),2, drop = TRUE])
 }
 
-
+#' @import stats
 calc_complete_gen <- function(complete_info) {
   #dplyr::filter(complete_info, abs(1 - completeness) <= .Machine$double.eps),
 
@@ -54,6 +56,7 @@ calc_complete_gen <- function(complete_info) {
   return(compl_df[match(unique(complete_info$id), compl_df$id),2, drop = TRUE])
 }
 
+#' @import stats
 calc_mean_compl <- function(complete_info, gen = 1) {
   #dplyr::filter(complete_info,generation <= (gen - 1)),
 
@@ -102,7 +105,6 @@ calc_compl_index <- function(ped, complete_info, gen = 1) {
 #' @import dplyr
 #' @export
 #'
-#' @examples
 calc_completeness <- function(ped, id = 'all', max_gen = 'all') {
 
   ### ARGUMENT CHECKS AND PROCESSING ###
@@ -159,7 +161,6 @@ calc_completeness <- function(ped, id = 'all', max_gen = 'all') {
 #' @return A dataframe with the completeness and/or depth measures of the pedigree
 #' @export
 #'
-#' @examples
 ped_summary_stats <- function(ped,
                               gen = 1,
                               summary = c('total_gen', 'equiv_gen', 'complete_gen', 'mean_compl', 'compl_index')) {

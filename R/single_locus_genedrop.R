@@ -12,24 +12,23 @@
 ### FUNCTIONS ###
 #################
 
-#' Title
+#' Single locus gene drop on a pedigree
 #'
-#' @param ped
-#' @param id_col
-#' @param sire_col
-#' @param dam_col
-#' @param sex_col
-#' @param sims
-#' @param pop_freq
-#' @param fixed_founder_genotypes
-#' @param calc_contribution
-#' @param report_progress
+#' @param ped pedigree on which to perform gene drop
+#' @param id_col name or index of id column
+#' @param sire_col name or index of sire column
+#' @param dam_col name or index of dam column
+#' @param sex_col name or index of sex column
+#' @param sims number of gene drop simulations
+#' @param pop_freq the frequency of the allele in the starting population
+#' @param fixed_founder_genotypes should founder genotypes be fixed?
+#' @param calc_contribution should the ancestry contributions of each founder be recorded?
+#' @param report_progress should the simulation progress be shown?
 #'
-#' @return
+#' @return a list of simulation output
 #' @import tibble
 #' @export
 #'
-#' @examples
 simple_gene_drop <- function(ped,
                              id_col,
                              sire_col,
@@ -65,7 +64,10 @@ simple_gene_drop <- function(ped,
   colnames(ped_reorder) <- c('id', 'sire', 'dam', 'sex')
 
   #ordered_ped <- ped_reorder[order(pedigree::orderPed(ped_reorder)),]
-  ordered_ped <- reorder_ped(ped_reorder)
+  ordered_ped <- reorder_ped(ped_reorder,
+                             id_col = 'id',
+                             sire_col = 'sire',
+                             dam_col = 'dam')
   ped_size <- nrow(ped_reorder)
 
   #record the index of sire and dams in new cols (this will make retrieval
@@ -172,21 +174,25 @@ simple_gene_drop <- function(ped,
   output_list[['geno']] <- lapply(gene_drop_list, function(x) {
     tibble::rownames_to_column(as.data.frame(x[['geno_mat']]), var = "id")
   } ) %>%
-    dplyr::bind_rows(., .id = 'sim')
+    dplyr::bind_rows(.id = 'sim')
+    #dplyr::bind_rows(., .id = 'sim')
 
   output_list[['geno_origin']] <- lapply(gene_drop_list, function(x) {
     tibble::rownames_to_column(as.data.frame(x[['geno_orig_mat']]), var = "id")
   }) %>%
-    dplyr::bind_rows(., .id = 'sim')
+    dplyr::bind_rows(.id = 'sim')
+    #dplyr::bind_rows(., .id = 'sim')
 
   output_list[['f_count']] <- lapply(gene_drop_list, function(x) {
     tibble::rownames_to_column(as.data.frame(x[['f_vec_mat']]), var = "id")
   }) %>%
-    dplyr::bind_rows(., .id = 'sim')
+    dplyr::bind_rows(.id = 'sim')
+    #dplyr::bind_rows(., .id = 'sim')
 
   if (isTRUE(calc_contribution)) {
     output_list[['contr_list']] <- contr_list %>%
-      dplyr::bind_rows(., .id = 'sim')
+      dplyr::bind_rows(.id = 'sim')
+      #dplyr::bind_rows(., .id = 'sim')
   }
 
   return(output_list)
@@ -195,21 +201,6 @@ simple_gene_drop <- function(ped,
 
 
 
-
-#' Title
-#'
-#' @param ped_size
-#' @param pedigree
-#' @param sire_draw_vec
-#' @param dam_draw_vec
-#' @param geno_mat
-#' @param geno_orig_mat
-#' @param f_vec_mat
-#'
-#' @return
-#' @export
-#'
-#' @examples
 single_gene_drop <- function(ped_size,
                              pedigree,
                              sire_draw_vec,
@@ -268,20 +259,10 @@ single_gene_drop <- function(ped_size,
 }
 
 
-#' Title
-#'
-#' @param ped_size
-#' @param pedigree
-#' @param sire_draw_vec
-#' @param dam_draw_vec
-#' @param contr_mat
-#'
-#' @return
+
 #' @import dplyr
 #' @import tibble
-#' @export
-#'
-#' @examples
+#' @importFrom rlang .data
 single_genetic_contr <- function(ped_size,
                                  pedigree,
                                  sire_draw_vec,
@@ -323,9 +304,10 @@ single_genetic_contr <- function(ped_size,
 
   return(
     contribute_list %>%
-      dplyr::bind_rows(., .id = 'focal_ind') %>%
-      dplyr::mutate(geno_sum = sire_contr + dam_contr) %>%
-      dplyr::select(focal_ind, id, geno_sum) %>%
+      #dplyr::bind_rows(., .id = 'focal_ind') %>%
+      dplyr::bind_rows(.id = 'focal_ind') %>%
+      dplyr::mutate(geno_sum = .data$sire_contr + .data$dam_contr) %>%
+      dplyr::select(.data$focal_ind, .data$id, .data$geno_sum) %>%
       `rownames<-`( NULL )
   )
 }
