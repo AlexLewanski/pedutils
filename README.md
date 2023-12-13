@@ -15,7 +15,7 @@ Name (ORCID link)| Contact | Affiliation(s)
 [Alexander Lewanski](https://orcid.org/0000-0001-5843-0837) | [allewanski AT gmail DOT com](mailto:allewanski@gmail.com)|Michigan Station University, Kellogg Biological Station, University of Michigan
 
 ## Overview
-The `pedutils` package houses code to manipulate and analyze pedigree information. In its current state, it does not have a particularly specialized scope and is primarily serving as a convenient receptacle for developing and documenting code in an intentional way. If you find your way onto this repo and end up working with the `pedutils` package, please let me know if you find errors and/or if there are things you want added or improved. This package is at its incipient stages, so be prepared for fairly substantial changes and additions (including this README).
+The `pedutils` package houses code to work with pedigree information. Currently, most of the content involves basic pedigree processing and manipulation. At this stage of the package, it does not have a particularly specialized scope and is primarily serving as a convenient receptacle for developing and documenting code in an intentional way. If you stumble upon this repo and end up working with the `pedutils` package, please let me know if you find errors and/or if there are things you want added or improved. This package is at an incipient stage, so be prepared for fairly substantial changes and additions (including fleshing out of this README).
 
 ## Contents
 ```
