@@ -1,16 +1,21 @@
 #########################
 ### COANCESTRY MATRIX ###
 #########################
-#' Calculate kinship/coancestry matrix from a pedigree
+#' Calculate kinship/coancestry matrix or additive relationship matrix from a pedigree
 #'
 #' @param ped the pedigree from which to calculate the kinship matrix
 #' @param id_col the name or index of the id column
 #' @param sire_col the name or index of the sire column
 #' @param dam_col the name or index of the dam column
+#' @param type Whether the kinship matrix or additive relationship matrix should be calculated
 #'
-#' @return the kinship matrix
+#' @return the kinship or additive relationship matrix
 #' @export
-calc_kinmat <- function(ped, id_col = 1, sire_col = 2, dam_col = 3) {
+calc_pedmat <- function(ped,
+                        id_col = 1,
+                        sire_col = 2,
+                        dam_col = 3,
+                        type = c('kinship', 'add_rel')) {
   #resources:
   #https://doi.org/10.3389/fgene.2021.655638
   #https://github.com/mayoverse/kinship2/blob/master/R/kinship.R
@@ -56,7 +61,11 @@ calc_kinmat <- function(ped, id_col = 1, sire_col = 2, dam_col = 3) {
   }
 
   #return the kinship matrix (without the extra founder column and row)
-  return(kinmat[-(n_plus_one), -(n_plus_one)])
+  return(
+    switch(type,
+           kinship = {kinmat[-(n_plus_one), -(n_plus_one)]},
+           add_rel = {2*kinmat[-(n_plus_one), -(n_plus_one)]})
+    )
 }
 
 
@@ -174,10 +183,11 @@ inbr_from_kinmat <- function(ped,
 
   #if a kinship matrix isn't provided, calculate one from the input pedigree
   if (is.null(kin_mat)) {
-    kin_mat <- calc_kinmat(ped = ped,
+    kin_mat <- calc_pedmat(ped = ped,
                            id_col = id_col,
                            sire_col = sire_col,
-                           dam_col = dam_col)
+                           dam_col = dam_col,
+                           type = 'kinship')
   }
 
   if (!identical(colnames(kin_mat), rownames(kin_mat)))

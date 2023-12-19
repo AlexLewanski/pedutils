@@ -81,7 +81,7 @@ calc_ped_Ne <- function(ped,
   #=== INITIAL PROCESSING AND CHECKS ===
   #=====================================
   if (is.null(NULL))
-    coanc_mat <- calc_kinmat(ped)
+    coanc_mat <- calc_pedmat(ped = ped, type = 'kinship')
 
   if (is.null(eqg)) {
     eqg <- ped_summary_stats(ped = ped, summary = 'equiv_gen')

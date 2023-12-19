@@ -2,9 +2,9 @@
 
 export("%>%")
 export(calc_completeness)
-export(calc_kinmat)
 export(calc_partial_kinmat)
 export(calc_ped_Ne)
+export(calc_pedmat)
 export(character2numeric_id)
 export(check_order_ped)
 export(extract_ped)
