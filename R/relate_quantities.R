@@ -497,7 +497,7 @@ kinship_gdrop_mat <- function(gdrop_mat_output,
       tibble::column_to_rownames(var = 'samp1_name') %>%
       as.matrix()
 
-    kinship_mat_reorder <- kinship_mat[match(colnames(kinship_mat), rownames(kinship_mat)),]
+    kinship_mat_reorder <- kinship_mat[,match(rownames(kinship_mat), colnames(kinship_mat))]
     kinship_mat_reorder[lower.tri(kinship_mat_reorder)] <- t(kinship_mat_reorder)[lower.tri(kinship_mat_reorder)]
 
     return(kinship_mat_reorder)
