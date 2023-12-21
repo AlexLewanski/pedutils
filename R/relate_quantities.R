@@ -315,6 +315,50 @@ partial_founder_fped_gdrop <- function(gdrop_output) {
 }
 
 
+#' Calculate coancestry/kinship from gene dropping (the gene_drop_matrix function). NOTE: THIS FUNCTION HAS NOT BEEN TESTED
+#'
+#' @param gdrop_output output from the simple_gene_drop function (specifically, the geno_origin dataframe)
+#' @param samples the samples for which you want to calculate kinship values. If "all" is specified, all individuals in the pedigree will be included in the calculations.
+#' @param show_progress specifies whether the function should report the progress of the calculations
+#'
+#' @return a dataframe with all pairwise combos of individuals and their associated kinship value
+#' @export
+#'
+kinship_gdrop <- function(gdrop_output, samples = 'all', show_progress = TRUE) {
+
+  if (samples == 'all') samples <- unique(gdrop_output$id)
+
+  sample_combo_df <- as.data.frame(t(utils::combn(samples, 2))) %>%
+    dplyr::rename(samp1 = "V1",
+                  samp2 = "V2") %>%
+    dplyr::mutate(kinship = NA)
+
+  show_progress <- isTRUE(show_progress)
+  n_comp <- nrow(sample_combo_df)
+
+  if (show_progress) p_bar <- utils::txtProgressBar(0, n_comp, style = 3, char = '*')
+
+  for (i in seq_len(n_comp)) {
+    sample_combo_df[i,3] <- gdrop_output %>%
+      dplyr::filter(.data$id %in% unlist(sample_combo_df[i,-3])) %>%
+      #pivot_longer(cols = ends_with('origin'), values_to = 'allele_id') %>%
+      dplyr::group_by(.data$sim) %>%
+      #arrange(id) %>%
+      dplyr::summarize(kin_val = 0.25 * ( (.data$sire_geno_origin[1] == .data$sire_geno_origin[2]) +
+                                     (.data$sire_geno_origin[1] == .data$dam_geno_origin[2]) +
+                                     (.data$dam_geno_origin[1] == .data$sire_geno_origin[2]) +
+                                     (.data$dam_geno_origin[1] == .data$dam_geno_origin[2]) )) %>%
+      dplyr::pull(.data$kin_val) %>%
+      mean()
+
+    if (show_progress) utils::setTxtProgressBar(p_bar, i)
+  }
+
+  return(sample_combo_df)
+}
+
+
+
 #' Calculate inbreeding from gene dropping (the gene_drop_matrix function)
 #'
 #' @param gdrop_mat_output gene dropping output from the gene_drop_matrix function
@@ -379,3 +423,152 @@ partial_founder_fped_gdrop_mat <- function(gdrop_mat_output) {
       dplyr::ungroup()
   )
 }
+
+
+
+
+#' Calculate coancestry/kinship from gene dropping (the gene_drop_matrix function)
+#'
+#' @param gdrop_mat_output gene dropping output from the gene_drop_matrix function
+#' @param samples the samples for which you want to calculate kinship values. If "all" is specified, all individuals in the pedigree will be included in the calculations.
+#' @param show_progress specifies whether the function should report the progress of the calculations
+#'
+#' @return a dataframe with all pairwise combos of individuals and their associated kinship value
+#' @export
+#'
+kinship_gdrop_mat <- function(gdrop_mat_output, samples = 'all', show_progress = TRUE) {
+
+  if (identical(samples,'all')) {
+    samples <- gdrop_mat_output$indexed_pedigree[,1,drop=TRUE]
+  } else {
+    samples <- which(gdrop_mat_output$reordered_pedigree[,1,drop=TRUE] %in% samples)
+    if (length(samples) == 0) stop('None of input samples exist in the pedigree.')
+  }
+
+  sample_combo_df <- as.data.frame(t(utils::combn(samples, 2))) %>%
+    dplyr::rename(samp1 = "V1",
+                  samp2 = "V2") %>%
+    dplyr::mutate(kinship = NA)
+
+  show_progress <- isTRUE(show_progress)
+  n_comp <- nrow(sample_combo_df)
+  #sim_count <- ncol(gdrop_mat_output$sire)
+
+  if (show_progress) p_bar <- utils::txtProgressBar(0, n_comp, style = 3, char = '*')
+
+  for (i in seq_len(n_comp)) {
+
+    #the IBD counts across all four inter-individual allele copy comparisons
+    #this is processed outside of the for loop to calculate the kinship value
+    sample_combo_df[i,'kinship'] <- (sum(gdrop_mat_output$sire[sample_combo_df$samp1[i],] == gdrop_mat_output$sire[sample_combo_df$samp2[i],]) +
+                                       sum(gdrop_mat_output$sire[sample_combo_df$samp1[i],] == gdrop_mat_output$dam[sample_combo_df$samp2[i],]) +
+                                       sum(gdrop_mat_output$dam[sample_combo_df$samp1[i],] == gdrop_mat_output$sire[sample_combo_df$samp2[i],]) +
+                                       sum(gdrop_mat_output$dam[sample_combo_df$samp1[i],] == gdrop_mat_output$dam[sample_combo_df$samp2[i],]))
+
+    if (show_progress) utils::setTxtProgressBar(p_bar, i)
+  }
+
+  sample_combo_df[,'samp1_name'] <- gdrop_mat_output$reordered_pedigree$id[sample_combo_df$samp1]
+  sample_combo_df[,'samp2_name'] <- gdrop_mat_output$reordered_pedigree$id[sample_combo_df$samp2]
+
+  #calculate kinship from the IBD counts by multiplying the summed IBD count by 0.25 (because 4 different
+  #allele copy comparisons are being made) and then divide by the number of simulations used in gene dropping
+  sample_combo_df[,'kinship'] <- sample_combo_df[,'kinship'] * 0.25 * (1/ncol(gdrop_mat_output$sire))
+
+  return(sample_combo_df)
+}
+
+
+
+###########################################
+### TESTING CODE AND/OR CODE NOT IN USE ###
+###########################################
+
+# examp3_pedsim <- sim_ped_repeat_attempt(attempts = 2000,
+#                                         founders = 40,
+#                                         cycles = 15,
+#                                         start_year = 2005,
+#                                         age_mort_horizontal_shift = -1.5,
+#                                         age_mort_slope = 0.5,
+#                                         max_hatchling_survive_prob = 0.5,
+#                                         prob_pair = 0.7,
+#                                         add_immigrants = 'none',
+#                                         immigrant_vec = NULL,
+#                                         founder_age_lambda = 3,
+#                                         offspring_lambda = 2.5,
+#                                         immigrant_age = 5,
+#                                         immigrant_prob = 5,
+#                                         safeguard = 10000,
+#                                         max_pop = 5000,
+#                                         report_progress = FALSE)
+#
+# examp3_extract_ped <- extract_ped(examp3_pedsim,
+#                                   remove_nonbreeding_founders = TRUE,
+#                                   pedtools_format = TRUE)
+#
+#
+# test_gdrop <- gene_drop_matrix(ped = examp3_extract_ped, sims = 50000, report_progress = TRUE)
+#
+#
+#
+#
+# kinship_gdrop_mat <- function(gdrop_mat_output, samples = 'all', show_progress = TRUE) {
+#
+#   if (identical(samples,'all')) {
+#     samples <- gdrop_mat_output$indexed_pedigree[,1,drop=TRUE]
+#   } else {
+#     samples <- which(gdrop_mat_output$reordered_pedigree[,1,drop=TRUE] %in% samples)
+#     if (length(samples) == 0) stop('None of input samples exist in the pedigree.')
+#   }
+#
+#   sample_combo_df <- as.data.frame(t(utils::combn(samples, 2))) %>%
+#     dplyr::rename(samp1 = "V1",
+#                   samp2 = "V2") %>%
+#     dplyr::mutate(kinship = NA)
+#
+#   show_progress <- isTRUE(show_progress)
+#   n_comp <- nrow(sample_combo_df)
+#   #sim_count <- ncol(gdrop_mat_output$sire)
+#
+#   if (show_progress) p_bar <- utils::txtProgressBar(0, n_comp, style = 3, char = '*')
+#
+#   for (i in seq_len(n_comp)) {
+#
+#     sample_combo_df[i,'kinship'] <- (sum(gdrop_mat_output$sire[sample_combo_df$samp1[i],] == gdrop_mat_output$sire[sample_combo_df$samp2[i],]) +
+#                                        sum(gdrop_mat_output$sire[sample_combo_df$samp1[i],] == gdrop_mat_output$dam[sample_combo_df$samp2[i],]) +
+#                                        sum(gdrop_mat_output$dam[sample_combo_df$samp1[i],] == gdrop_mat_output$sire[sample_combo_df$samp2[i],]) +
+#                                        sum(gdrop_mat_output$dam[sample_combo_df$samp1[i],] == gdrop_mat_output$dam[sample_combo_df$samp2[i],]))
+#
+#     if (show_progress) utils::setTxtProgressBar(p_bar, i)
+#   }
+#
+#   sample_combo_df[,'samp1_name'] <- gdrop_mat_output$reordered_pedigree$id[sample_combo_df$samp1]
+#   sample_combo_df[,'samp2_name'] <- gdrop_mat_output$reordered_pedigree$id[sample_combo_df$samp2]
+#
+#   #calculate kinship from the IBD counts by multiplying the summed IBD count by 0.25 (because 4 different
+#   #allele copy comparisons are being made) and then divide by the number of simulations used in gene dropping
+#   sample_combo_df[,'kinship'] <- sample_combo_df[,'kinship'] * 0.25 * (1/ncol(gdrop_mat_output$sire))
+#
+#   return(sample_combo_df)
+# }
+#
+#
+#
+# test_kin_gdrop <- kinship_gdrop_mat(test_gdrop, samples = 'all')
+#
+# coanc_mat <- calc_pedmat(examp3_extract_ped, type = 'kinship')
+#
+#
+#
+# test_kin_gdrop
+#
+# coanc_mat %>%
+#   as.data.frame() %>%
+#   tibble::rownames_to_column(var = 'samp1') %>%
+#   tidyr::pivot_longer(cols = !samp1, names_to = 'samp2') %>%
+#   print(n = 200)
+#
+#
+# test_kin_gdrop %>%
+#   dplyr::filter( (samp1_name == 'F8' & samp2_name == 'ID165') | (samp2_name == 'F8' & samp1_name == 'ID165'))
+
