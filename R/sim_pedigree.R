@@ -686,13 +686,13 @@ pedsim2relateStats <- function(ped_output,
                                export_file_name = 'relateStats_file.tsv') {
 
   processed_df <- ped_output %>%
-    dplyr::group_by(id) %>%
+    dplyr::group_by(.data$id) %>%
     dplyr::summarize(SIRE_ID = dplyr::first(.data$sire),
                      DAM_ID = dplyr::first(.data$dam),
                      SEX = dplyr::first(.data$sex),
                      COHORT = dplyr::first(.data$birth_year),
                      COHORT_LAST = max(.data$year)) %>%
-    dplyr::rename(ID = id) %>%
+    dplyr::rename(ID = .data$id) %>%
     dplyr::mutate(SEX = dplyr::case_when(.data$SEX == 'M' ~ 'MALE',
                                          .data$SEX == 'F' ~ 'FEMALE',
                                          TRUE ~ '*'),

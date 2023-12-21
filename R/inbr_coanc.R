@@ -276,8 +276,6 @@ partial_inbreeding <- function(ped,
 #' @param gdrop_output output from the simple_gene_drop function (specifically, the geno_origin dataframe)
 #'
 #' @return a dataframe containing the inbreeding values
-#' @import dplyr
-#' @importFrom rlang .data
 #' @export
 #'
 fped_gdrop <- function(gdrop_output) {
