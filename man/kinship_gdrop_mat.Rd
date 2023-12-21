@@ -4,7 +4,12 @@
 \alias{kinship_gdrop_mat}
 \title{Calculate coancestry/kinship from gene dropping (the gene_drop_matrix function)}
 \usage{
-kinship_gdrop_mat(gdrop_mat_output, samples = "all", show_progress = TRUE)
+kinship_gdrop_mat(
+  gdrop_mat_output,
+  samples = "all",
+  show_progress = TRUE,
+  output = c("matrix", "dataframe")
+)
 }
 \arguments{
 \item{gdrop_mat_output}{gene dropping output from the gene_drop_matrix function}
@@ -12,6 +17,8 @@ kinship_gdrop_mat(gdrop_mat_output, samples = "all", show_progress = TRUE)
 \item{samples}{the samples for which you want to calculate kinship values. If "all" is specified, all individuals in the pedigree will be included in the calculations.}
 
 \item{show_progress}{specifies whether the function should report the progress of the calculations}
+
+\item{output}{should the kinship values be output as a dataframe or a matrix?}
 }
 \value{
 a dataframe with all pairwise combos of individuals and their associated kinship value

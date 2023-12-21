@@ -11,6 +11,7 @@ Imports:
     magrittr,
     ggplot2,
     tibble,
+    tidyr,
     rlang
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

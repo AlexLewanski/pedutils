@@ -432,11 +432,17 @@ partial_founder_fped_gdrop_mat <- function(gdrop_mat_output) {
 #' @param gdrop_mat_output gene dropping output from the gene_drop_matrix function
 #' @param samples the samples for which you want to calculate kinship values. If "all" is specified, all individuals in the pedigree will be included in the calculations.
 #' @param show_progress specifies whether the function should report the progress of the calculations
+#' @param output should the kinship values be output as a dataframe or a matrix?
 #'
 #' @return a dataframe with all pairwise combos of individuals and their associated kinship value
 #' @export
 #'
-kinship_gdrop_mat <- function(gdrop_mat_output, samples = 'all', show_progress = TRUE) {
+kinship_gdrop_mat <- function(gdrop_mat_output,
+                              samples = 'all',
+                              show_progress = TRUE,
+                              output = c('matrix', 'dataframe')) {
+
+  output <- match.arg(output, several.ok = FALSE)
 
   if (identical(samples,'all')) {
     samples <- gdrop_mat_output$indexed_pedigree[,1,drop=TRUE]
@@ -445,9 +451,14 @@ kinship_gdrop_mat <- function(gdrop_mat_output, samples = 'all', show_progress =
     if (length(samples) == 0) stop('None of input samples exist in the pedigree.')
   }
 
-  sample_combo_df <- as.data.frame(t(utils::combn(samples, 2))) %>%
-    dplyr::rename(samp1 = "V1",
-                  samp2 = "V2") %>%
+  #sample_combo_df <- as.data.frame(t(utils::combn(samples, 2))) %>%
+  sample_combo_df <- rbind(t(utils::combn(samples, 2)),
+                             cbind(samples, samples)) %>%
+    as.data.frame() %>%
+    dplyr::rename(samp1 = 1,
+                  samp2 = 2) %>%
+    #dplyr::rename(samp1 = "V1",
+    #              samp2 = "V2") %>%
     dplyr::mutate(kinship = NA)
 
   show_progress <- isTRUE(show_progress)
@@ -475,7 +486,21 @@ kinship_gdrop_mat <- function(gdrop_mat_output, samples = 'all', show_progress =
   #allele copy comparisons are being made) and then divide by the number of simulations used in gene dropping
   sample_combo_df[,'kinship'] <- sample_combo_df[,'kinship'] * 0.25 * (1/ncol(gdrop_mat_output$sire))
 
-  return(sample_combo_df)
+  if (output == 'dataframe') {
+    return(sample_combo_df)
+  } else {
+    #output as a matrix
+    #currently, self kinship isn't included (i.e., the diagonals are NA)
+    kinship_mat <- tidyr::pivot_wider(sample_combo_df[,c('samp1_name', 'samp2_name', 'kinship')],
+                                      names_from = c('samp2_name'),
+                                      values_from = 'kinship') %>%
+      tibble::column_to_rownames(var = 'samp1_name') %>%
+      as.matrix()
+
+    kinship_mat_reorder <- kinship_mat[match(colnames(kinship_mat), rownames(kinship_mat)),]
+    kinship_mat_reorder[lower.tri(kinship_mat_reorder)] <- kinship_mat_reorder[upper.tri(kinship_mat_reorder)]
+    return(kinship_mat_reorder)
+  }
 }
 
 
