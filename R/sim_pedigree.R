@@ -200,7 +200,6 @@
 ### PEDIGREE SIMULATION  MAIN FUNCTION ###
 ##########################################
 
-#' @import utils
 sim_simple_ped <- function(founders = 20,
                            cycles = 5,
                            start_year = 2020,
@@ -468,7 +467,7 @@ validate_founder_df <- function(founders) {
   return(TRUE)
 }
 
-#' @import stats
+
 create_founders <- function(n = 10, start_year = 1990, age_lambda = 3) {
   return(
     data.frame(
@@ -508,7 +507,6 @@ create_immigrant_founders <- function(n = 10, start_year = 1990, id_index = 1, a
 }
 
 
-#' @import stats
 pair_up <- function(df,
                     prob_pair,
                     order = c('m_to_f', 'f_to_m'),
@@ -582,9 +580,6 @@ rbind_empty_handle <- function(df1, df2) {
 #' @param max_hatchling_survive_prob Maximum probability of hatchling survival. This is the survival probability when the population size is 0.
 #'
 #' @return A plot (ggplot object) visualizing the relationship between age and survival probability.
-#' @import dplyr
-#' @import ggplot2
-#' @importFrom rlang .data
 #' @export
 #'
 survival_explanatory_vis <- function(age_mort_horizontal_shift = -1.5,
@@ -603,7 +598,7 @@ survival_explanatory_vis <- function(age_mort_horizontal_shift = -1.5,
                                                      age_mort_slope = age_mort_slope) %>%
     dplyr::mutate(age = age_vec) %>%
     ggplot2::ggplot() +
-    ggplot2::geom_point(aes(x = .data$age, y = .data$prob_mort),
+    ggplot2::geom_point(ggplot2::aes(x = .data$age, y = .data$prob_mort),
                         color = "#737373", size = 3, alpha = 1) +
     #geom_point(aes(x = age, y = mort_draw)) +
     ggplot2::theme_bw() +
@@ -615,7 +610,7 @@ survival_explanatory_vis <- function(age_mort_horizontal_shift = -1.5,
   plot_list[['offspring_survival_plot']] <- data.frame(pop = pop_vec,
                                                        offspring_prob_survive = offspring_survival_vec) %>%
     ggplot2::ggplot() +
-    ggplot2::geom_line(aes(x = .data$pop, y = .data$offspring_prob_survive),
+    ggplot2::geom_line(ggplot2::aes(x = .data$pop, y = .data$offspring_prob_survive),
                        size = 2, color = "#737373") +
     ggplot2::theme_bw() +
     ggplot2::xlab('Population size') +
@@ -632,8 +627,6 @@ survival_explanatory_vis <- function(age_mort_horizontal_shift = -1.5,
 #' @param pedtools_format Logical (TRUE or FALSE) indicating whether to output the pedigree in pedtools format.
 #'
 #' @return A dataframe containing pedigree information.
-#' @import dplyr
-#' @importFrom rlang .data
 #' @export
 #'
 extract_ped <- function(ped_sim_output,
@@ -685,9 +678,6 @@ extract_ped <- function(ped_sim_output,
 #' @param export_file_name name for the exported file (if export_dir = TRUE)
 #'
 #' @return a dataframe of pedigree information in relateStats format
-#' @import utils
-#' @import dplyr
-#' @importFrom rlang .data
 #' @export
 #'
 pedsim2relateStats <- function(ped_output,

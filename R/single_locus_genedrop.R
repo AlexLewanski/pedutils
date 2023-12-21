@@ -26,8 +26,6 @@
 #' @param report_progress should the simulation progress be shown?
 #'
 #' @return a list of simulation output
-#' @import tibble
-#' @import stats
 #' @export
 #'
 simple_gene_drop <- function(ped,
@@ -261,9 +259,7 @@ single_gene_drop <- function(ped_size,
 
 
 
-#' @import dplyr
-#' @import tibble
-#' @importFrom rlang .data
+
 single_genetic_contr <- function(ped_size,
                                  pedigree,
                                  sire_draw_vec,
@@ -404,3 +400,6 @@ single_drop_matrix <- function(ped,
 }
 
 
+## @import dplyr
+## @import tibble
+## @importFrom rlang .data

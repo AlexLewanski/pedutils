@@ -116,7 +116,6 @@ index_pedigree <- function(ped) {
 #' @param founder_val the value that represents a founder in the sire and dam cols
 #'
 #' @return a pedigree stored in a dataframe with updated individual ID values
-#' @import dplyr
 #' @export
 #'
 character2numeric_id <- function(ped, id_col, sire_col, dam_col, founder_val = 0) {

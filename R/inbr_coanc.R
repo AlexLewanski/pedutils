@@ -224,8 +224,6 @@ inbr_from_kinmat <- function(ped,
 #' @param founder_val the value in the sire and dam columns that represent founder
 #'
 #' @return a list that contains a list of partial coancestry matrices and a dataframe of partial inbreeding values
-#' @import stats
-#' @import dplyr
 #' @export
 #'
 partial_inbreeding <- function(ped,
@@ -297,8 +295,6 @@ fped_gdrop <- function(gdrop_output) {
 #' @param gdrop_output output from the simple_gene_drop function (specifically, the geno_origin dataframe)
 #'
 #' @return a dataframe containing each individual's inbreeding values contributed by each founder
-#' @import dplyr
-#' @importFrom rlang .data
 #' @export
 #'
 partial_founder_fped_gdrop <- function(gdrop_output) {
@@ -338,7 +334,14 @@ fped_gdrop_mat <- function(gdrop_mat_output) {
 }
 
 
-partial_founder_fped_gdrop <- function(gdrop_mat_output) {
+#' Calculate the partial founder inbreeding values from gene dropping (the gene_drop_matrix function)
+#'
+#' @param gdrop_mat_output gene dropping output from the gene_drop_matrix function
+#'
+#' @return a dataframe containing the partial founder inbreeding values (partial_founder_fped) and the proportion of inbreeding that can be attributed to each founder (fped_prop)
+#' @export
+#'
+partial_founder_fped_gdrop_mat <- function(gdrop_mat_output) {
 
   #get the indices of the individuals/sim combos that represent IBD
   inbreeding_indices <- which(gdrop_mat_output$sire == gdrop_mat_output$dam,
@@ -359,22 +362,22 @@ partial_founder_fped_gdrop <- function(gdrop_mat_output) {
   #founder y)
 
   #STEP 3: divide the counts by the total count to get the proportion of inbreeding
-  #that can be attributed to each founder (fped_rel_prop). Divide the counts by the
+  #that can be attributed to each founder (fped_prop). Divide the counts by the
   #total number of simulations (extracted as column count from sire matrix) to
   #get the partial founder inbreeding (the probability that an individual will
   #be IBD at a locus due to a particular founder). This quantity is stored in
-  #fped_contr
+  #partial_founder_fped.
   return(
-    #S1
+    #Step 1
     data.frame(id = rownames(inbreeding_indices),
                #sim = as.character(inbreeding_indices[,2,drop=TRUE]),
                allele_origin = as.character(abs(gdrop_mat_output$sire)[inbreeding_indices])) %>%
       group_by(.data$id, .data$allele_origin) %>%
-      summarize(count = dplyr::n(), #S2
+      summarize(count = dplyr::n(), #Step 2
                 .groups = 'drop') %>%
       group_by(.data$id) %>%
-      mutate(fped_rel_prop = .data$count/sum(.data$count), #S3
-             fped_contr = .data$count/ncol(gdrop_mat_output$sire)) %>% #S3
+      mutate(partial_founder_fped = .data$count/ncol(gdrop_mat_output$sire), #Step 3
+             fped_prop = .data$count/sum(.data$count)) %>% #Step 3 (ctd)
       ungroup()
   )
 }

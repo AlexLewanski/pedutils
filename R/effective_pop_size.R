@@ -1,5 +1,4 @@
 
-#' @import stats
 calc_Ne_f <- function(f, eqg) {
   delF <- 1 - ((1 - f)^(1/(eqg - 1)))
   Ne <- 1/(2*mean(delF))
@@ -25,7 +24,6 @@ wrapper_Ne_f <- function(id, ped, kin_mat, f_info = NULL, eqg_info) {
 }
 
 
-#' @import stats
 calc_Ne_c <- function(coanc, mean_eqg) {
   delCoanc <- 1 - ((1 - coanc)^(1/mean_eqg))
   Ne <- 1/(2*mean(delCoanc))
@@ -36,7 +34,6 @@ calc_Ne_c <- function(coanc, mean_eqg) {
 }
 
 
-#' @import utils
 wrapper_Ne_c <- function(id, coanc_mat, eqg_info, max_compar = 100000) {
 
   id_pairs <- t(utils::combn(id, 2))
