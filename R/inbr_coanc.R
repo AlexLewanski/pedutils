@@ -319,3 +319,62 @@ partial_founder_fped_gdrop <- function(gdrop_output) {
       dplyr::filter(!is.na(.data$fped_founder_id))
   )
 }
+
+
+#' Calculate inbreeding from gene dropping (the gene_drop_matrix function)
+#'
+#' @param gdrop_mat_output gene dropping output from the gene_drop_matrix function
+#'
+#' @return a dataframe containing the estimated inbreeding for each individual
+#' @export
+#'
+fped_gdrop_mat <- function(gdrop_mat_output) {
+
+  return(
+    data.frame(id = gdrop_mat_output$reordered_pedigree[,1,drop=TRUE],
+               f_ped = apply(gdrop_mat_output$sire == gdrop_mat_output$dam, 1, sum)/ncol(gdrop_mat_output$sire))
+  )
+
+}
+
+
+partial_founder_fped_gdrop <- function(gdrop_mat_output) {
+
+  #get the indices of the individuals/sim combos that represent IBD
+  inbreeding_indices <- which(gdrop_mat_output$sire == gdrop_mat_output$dam,
+                              arr.ind = TRUE)
+
+  ### NOTES: ###
+  #STEP 1: dataframe where each row represents an IBD instance where ID is the indiv
+  #where the IBD event occurred and allele_origin is the founder where the allele
+  #originated. Because each allele copy from a founder is coded as x and -x, getting
+  #the origin of the allele is as simple as taking the absolute value of allele copy
+  #These IBD events are extracted via the inbreeding_indices matrix created above.
+  #The sire matrix is arbitrarily used to obtain the allele origin for the IBD
+  #alleles. But since we are working with instances of IBD, it would equivalent
+  #to use the dam matrix for this purpose
+
+  #STEP 2: sum up the number of times IBD occurs for each id and allele origin
+  #combo (e.g., indiv x has an instance of IBD due to an allele provided by
+  #founder y)
+
+  #STEP 3: divide the counts by the total count to get the proportion of inbreeding
+  #that can be attributed to each founder (fped_rel_prop). Divide the counts by the
+  #total number of simulations (extracted as column count from sire matrix) to
+  #get the partial founder inbreeding (the probability that an individual will
+  #be IBD at a locus due to a particular founder). This quantity is stored in
+  #fped_contr
+  return(
+    #S1
+    data.frame(id = rownames(inbreeding_indices),
+               #sim = as.character(inbreeding_indices[,2,drop=TRUE]),
+               allele_origin = as.character(abs(gdrop_mat_output$sire)[inbreeding_indices])) %>%
+      group_by(.data$id, .data$allele_origin) %>%
+      summarize(count = dplyr::n(), #S2
+                .groups = 'drop') %>%
+      group_by(.data$id) %>%
+      mutate(fped_rel_prop = .data$count/sum(.data$count), #S3
+             fped_contr = .data$count/ncol(gdrop_mat_output$sire)) %>% #S3
+      ungroup()
+  )
+}

@@ -312,3 +312,95 @@ single_genetic_contr <- function(ped_size,
       `rownames<-`( NULL )
   )
 }
+
+
+
+
+
+### ALTERNATIVE VERSION OF GENE DROP THAT USES MATRICES ###
+
+
+#' Single locus gene drop on a pedigree (using matrices to record the alleles)
+#'
+#' @param ped pedigree (stored in dataframe) with the following organization: column 1 --> id, column 2 --> sire id, column 3 --> dam. Founder parents should be coded as 0s.
+#' @param sims the number of gene drops to perform
+#' @param report_progress should the simulation progress be reported?
+#'
+#' @return a list containing the following items: matrix of alleles derived from the sire (rows = individuals, columns = sims); matrix of alleles derived from the dam (rows = individuals, columns = sims); reorded pedigree; indexed version of reorded pedigree
+#' @export
+#'
+gene_drop_matrix <- function(ped, sims = 10, report_progress = TRUE) {
+  ped_reorder <- reorder_ped(ped, 1, 2, 3)
+  ped_reorder_index <- index_pedigree(ped_reorder)
+
+  ped_size <- nrow(ped_reorder_index)
+
+  init_allele_mat <- matrix(data = 0, nrow = ped_size, ncol = 2)
+
+  #allele_mat_sire <- matrix(data = 0, nrow = ped_size, ncol = sims)
+  #allele_mat_dam <- matrix(data = 0, nrow = ped_size, ncol = sims)
+
+  allele_mat_list <- stats::setNames(replicate(2,
+                                               matrix(data = 0,
+                                                      nrow = ped_size,
+                                                      ncol = sims,
+                                                      dimnames = list(ped_reorder[,1,drop=TRUE], NULL)),
+                                               simplify = FALSE),
+                                     nm = c('sire', 'dam'))
+
+  sire_founder_index <- which(ped_reorder_index[,2,drop=TRUE] == 0)
+  dam_founder_index <- which(ped_reorder_index[,3,drop=TRUE] == 0)
+
+  init_allele_mat[sire_founder_index,1] <- sire_founder_index
+  init_allele_mat[dam_founder_index,2] <- -dam_founder_index
+
+  #initiate progress bar
+  if (report_progress) {
+    message('Starting gene drop simulation', ifelse(sims > 1, 's.', '.'))
+    prog_bar <- utils::txtProgressBar(min = 0, max = sims, initial = 0, char = "*", style = 3)
+  }
+
+  for (SIM in seq_len(sims)) {
+
+    completed_mat <- single_drop_matrix(ped = ped_reorder_index,
+                                        ped_size = ped_size,
+                                        allele_mat = init_allele_mat)
+
+    for (i in seq_len(2)) allele_mat_list[[i]][,SIM] <- completed_mat[,i]
+    #allele_mat_sire[,SIM] <- completed_mat[,1]
+    #allele_mat_dam[,SIM] <- completed_mat[,2]
+
+    if (report_progress) utils::setTxtProgressBar(prog_bar, SIM)
+
+  }
+
+  allele_mat_list[['reordered_pedigree']] <- ped_reorder
+  allele_mat_list[['indexed_pedigree']] <- ped_reorder_index
+
+  return(allele_mat_list)
+}
+
+
+single_drop_matrix <- function(ped,
+                               ped_size,
+                               allele_mat) {
+
+  fid_draw <- stats::rbinom(n = ped_size, size = 1, prob = 0.5) + 1L
+  mid_draw <- stats::rbinom(n = ped_size, size = 1, prob = 0.5) + 1L
+
+  for (i in seq_len(ped_size)) {
+    #sire
+    if (ped[i,2,drop=TRUE] != 0) {
+      allele_mat[i,1] <- allele_mat[ped[i,2,drop=TRUE], fid_draw[i]]
+    }
+
+    #dam
+    if (ped[i,3,drop=TRUE] != 0) {
+      allele_mat[i,2] <- allele_mat[ped[i,3,drop=TRUE], mid_draw[i]]
+    }
+  }
+
+  return(allele_mat)
+}
+
+

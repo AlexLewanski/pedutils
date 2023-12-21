@@ -84,6 +84,25 @@ check_order_ped <- function(ped,
 
 
 
+#' Create indexed version of the pedigree
+#'
+#' @param ped pedigree (stored in a dataframe) with the following organization: column 1 --> id, column 2 --> sire id, column3 --> dam id. Founders should have parents coded as 0.
+#'
+#' @return A dataframe containing the pedigree with ids transformed to the index values of each individual (and founder parents coded as 0s).
+#' @export
+#'
+index_pedigree <- function(ped) {
+
+  return(
+    cbind(seq_along(ped[,1,drop=TRUE]),
+          match(ped[,2,drop=TRUE], ped[,1,drop=TRUE], nomatch = 0),
+          match(ped[,3,drop=TRUE], ped[,1,drop=TRUE], nomatch = 0))
+  )
+}
+
+
+
+
 ########################################
 ### MISCELLANEOUS PEDIGREE FUNCTIONS ###
 ########################################
@@ -145,6 +164,72 @@ get_ancestors <- function(ped, indiv_vec, include_repeats = TRUE) {
   if (!isTRUE(include_repeats)) return(unique(anc_vec_removeNA))
   return(anc_vec_removeNA)
 }
+
+
+get_offspring <- function(ped, indiv_vec, include_repeats = TRUE) {
+
+  offspring_vec <- ped[,1,drop = TRUE][ped[,2,drop = TRUE] %in% indiv_vec | ped[,3,drop = TRUE] %in% indiv_vec]
+  if (length(offspring_vec) == 0) return(NULL)
+  return(offspring_vec)
+}
+
+
+
+#' Subset pedigree down to a focal set of individuals and their descendants
+#'
+#' @param ped pedigree (stored in dataframe) with the following organization: column 1 --> id, column 2 --> sire id, column 3 --> dam. Founder parents should be coded as 0s.
+#' @param indivs the individuals for whom you want to subset the pedigree
+#'
+#' @return a dataframe containing pedigree information for the focal individuals and their descendants based on the input pedigree
+subset_ped_descendants <- function(ped, indivs) {
+
+  indiv_list <- list(indivs)
+  counter <- 1
+  while (TRUE) {
+
+    indiv_vec <- get_offspring(ped, indiv_list[[counter]])
+
+    if (is.null(indiv_vec)) break
+
+    indiv_list[[counter + 1]] <- indiv_vec[!indiv_vec %in% unlist(indiv_list)]
+
+    counter <- counter + 1
+  }
+
+  return(unlist(indiv_list))
+
+}
+
+
+#' Subset pedigree down to a focal set of individuals and their ancestors
+#'
+#' @param ped pedigree (stored in dataframe) with the following organization: column 1 --> id, column 2 --> sire id, column 3 --> dam. Founder parents should be coded as 0s.
+#' @param indivs the individuals for whom you want to subset the pedigree
+#'
+#' @return a dataframe containing pedigree information for the focal individuals and their ancestors based on the input pedigree
+#' @export
+subset_ped_ancestors <- function(ped, indivs) {
+
+  indiv_list <- list(indivs)
+  counter <- 1
+  while (TRUE) {
+
+    indiv_vec <- get_ancestors(ped, indiv_list[[counter]],
+                               include_repeats = FALSE)
+
+    if (is.null(indiv_vec)) break
+
+    indiv_list[[counter + 1]] <- indiv_vec[!indiv_vec %in% unlist(indiv_list)]
+
+    counter <- counter + 1
+  }
+
+  return(unlist(indiv_list))
+
+}
+
+
+
 
 
 
