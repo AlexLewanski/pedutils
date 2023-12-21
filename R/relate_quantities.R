@@ -498,7 +498,8 @@ kinship_gdrop_mat <- function(gdrop_mat_output,
       as.matrix()
 
     kinship_mat_reorder <- kinship_mat[match(colnames(kinship_mat), rownames(kinship_mat)),]
-    kinship_mat_reorder[lower.tri(kinship_mat_reorder)] <- kinship_mat_reorder[upper.tri(kinship_mat_reorder)]
+    kinship_mat_reorder[lower.tri(kinship_mat_reorder)] <- t(kinship_mat_reorder)[lower.tri(kinship_mat_reorder)]
+
     return(kinship_mat_reorder)
   }
 }
