@@ -372,12 +372,12 @@ partial_founder_fped_gdrop_mat <- function(gdrop_mat_output) {
     data.frame(id = rownames(inbreeding_indices),
                #sim = as.character(inbreeding_indices[,2,drop=TRUE]),
                allele_origin = as.character(abs(gdrop_mat_output$sire)[inbreeding_indices])) %>%
-      group_by(.data$id, .data$allele_origin) %>%
-      summarize(count = dplyr::n(), #Step 2
-                .groups = 'drop') %>%
-      group_by(.data$id) %>%
-      mutate(partial_founder_fped = .data$count/ncol(gdrop_mat_output$sire), #Step 3
-             fped_prop = .data$count/sum(.data$count)) %>% #Step 3 (ctd)
-      ungroup()
+      dplyr::group_by(.data$id, .data$allele_origin) %>%
+      dplyr::summarize(count = dplyr::n(), #Step 2
+                       .groups = 'drop') %>%
+      dplyr::group_by(.data$id) %>%
+      dplyr::mutate(partial_founder_fped = .data$count/ncol(gdrop_mat_output$sire), #Step 3
+                    fped_prop = .data$count/sum(.data$count)) %>% #Step 3 (ctd)
+      dplyr::ungroup()
   )
 }
