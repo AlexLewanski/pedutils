@@ -492,16 +492,86 @@ kinship_gdrop_mat <- function(gdrop_mat_output,
     #output as a matrix
     #currently, self kinship isn't included (i.e., the diagonals are NA)
     kinship_mat <- tidyr::pivot_wider(sample_combo_df[,c('samp1_name', 'samp2_name', 'kinship')],
-                                      names_from = c('samp2_name'),
+                                      names_from = 'samp2_name',
                                       values_from = 'kinship') %>%
       tibble::column_to_rownames(var = 'samp1_name') %>%
       as.matrix()
 
-    kinship_mat_reorder <- kinship_mat[,match(rownames(kinship_mat), colnames(kinship_mat))]
-    kinship_mat_reorder[lower.tri(kinship_mat_reorder)] <- t(kinship_mat_reorder)[lower.tri(kinship_mat_reorder)]
+    kinship_mat_reorder <- kinship_mat[,match(rownames(kinship_mat), colnames(kinship_mat))] #reorder columns to match row order
+    kinship_mat_reorder[lower.tri(kinship_mat_reorder)] <- t(kinship_mat_reorder)[lower.tri(kinship_mat_reorder)] #copy upper triangle to lower triangle
 
     return(kinship_mat_reorder)
   }
+}
+
+
+
+#' Quantify founder ancestry from gene dropping (the gene_drop_matrix function)
+#'
+#' @param gdrop_mat_output gene dropping output from the gene_drop_matrix function
+#' @param founder_group_info the group membership of each founder. The dataframe should have one column named "id" that includes the founder ID and another column named "group" that indicates group membership
+#'
+#' @return a dataframe containing the ancestry proportion from each group
+#' @export
+#'
+quantify_ancestry <- function(gdrop_mat_output,
+                              founder_group_info) {
+
+  if (!identical(rownames(gdrop_mat_output$sire), rownames(gdrop_mat_output$dam)))
+    stop('The gene drop matrices must have the same individuals in the same order')
+
+
+  ### Switched to inner_join from left_join
+  #allele_group_map <- dplyr::left_join(gdrop_mat_output$founder_alleles,
+  #                                     founder_group_info, by = 'id')
+
+  allele_group_map <- dplyr::inner_join(gdrop_mat_output$founder_alleles,
+                                        founder_group_info, by = 'id')
+
+  #STEP 1:
+  #-combine sire and dam gene drop matrices (cbind func)
+  #-for each row (representing each individual), tally up each allele (table func)
+  #-for the list of named vectors outputted from table, convert each vector to a dataframe
+  # with a column of "values" (allele counts) and a column indicating the allele
+  # labelled "ind" (stack func). Each dataframe corresponds to the alleles for
+  #each individual
+
+  #STEP 2: combine the dataframes into a single dataframe (bind_rows command)
+  #        The newly added "ind" column indicates the individual that each
+  #        allele count corresponds to
+
+  #STEP 3: filter the considered alleles down to those originating from the
+  #        groups included in the founder_group_info input
+
+  #STEP 4: convert allele to integer (stack func outputs it as a factor)
+
+  #STEP 5: join the allele count df with information about the group from which
+  #        each allele is sourced. This information is provided by the user
+  #        via the founder_group_info argument. The dataframes are joined along
+  #        the allele column
+
+  #STEP 6: count up the number of alleles belonging to each individual/group subset
+  #        For example, the number of alleles that individual A inherited from
+  #        group 1
+
+  #STEP 7: standardize the allele counts by dividing by twice the number of simulations
+  #        used in gene dropping. The doubling of the sim count is because we are
+  #        working with diploid organisms in these simulations
+  return(
+    allele_group_membership_df <- lapply( #STEP 1
+      apply(cbind(gdrop_mat_output$sire, gdrop_mat_output$dam), 1, table, simplify = FALSE), #STEP 1
+      utils::stack) %>% #STEP 1
+      dplyr::bind_rows(.id = 'id') %>% #STEP 1
+      dplyr::rename("allele" = "ind") %>% #STEP 2
+      dplyr::filter(.data$allele %in% unique(allele_group_map$allele)) %>% #STEP 3
+      dplyr::mutate("allele" = as.integer(levels(.data$allele)[.data$allele])) %>% #STEP 4
+      dplyr::left_join(allele_group_map[,c('group', 'allele')], #STEP 5
+                       by = 'allele') %>% #STEP 5
+      dplyr::group_by(.data$id, .data$group) %>% #STEP 6
+      dplyr::summarize(allele_count = sum(.data$values), #STEP 6
+                       .groups = 'drop') %>% #STEP 6
+      dplyr::mutate(anc_prop = .data$allele_count/(gdrop_mat_output$sim_count*2) ) #STEP 7
+  )
 }
 
 

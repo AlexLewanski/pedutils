@@ -372,6 +372,11 @@ gene_drop_matrix <- function(ped, sims = 10, report_progress = TRUE) {
 
   allele_mat_list[['reordered_pedigree']] <- ped_reorder
   allele_mat_list[['indexed_pedigree']] <- ped_reorder_index
+  allele_mat_list[['founder_alleles']] <- data.frame(id = c(ped_reorder[sire_founder_index,1,drop=TRUE],
+                                                            ped_reorder[dam_founder_index,1,drop=TRUE]),
+                                                     allele = c(sire_founder_index,
+                                                                -dam_founder_index))
+  allele_mat_list[['sim_count']] <- sims
 
   return(allele_mat_list)
 }
