@@ -266,6 +266,65 @@ partial_inbreeding <- function(ped,
 }
 
 
+#' Calculate the altered genetic related matrix of Hunter et al. (2015)
+#'
+#' @param ped a pedigree
+#' @param cohort the cohort (containing one or more individuals) used to create the truncated pedigree
+#'
+#' @return a matrix containing the additive genetic relatedness value between all individuals calculated based on the truncated pedigree
+#' @export
+#'
+calc_Astar <- function(ped, cohort) {
+  ped[ped[,1,drop=TRUE] %in% cohort,c(2, 3)] <- '0'
+  return(calc_pedmat(ped, type = "add_rel"))
+}
+
+
+#' Calculate the expected genetic contribution of a set of individuals to another set based on the Hunter et al. (2019) method
+#'
+#' @param ped pedigree dataframe
+#' @param contributors the cohort for which to calculate genetic contribution
+#' @param recipients the "recipient" group for which to calculate the genetic contribution of the individual(s) included in contributors
+#' @param focal_contemporaries the individuals alive at the same time as the contributor cohort. This is only necessary if standardize is set to two.
+#' @param standardize the method used to standardize the genetic contribution values.
+#' This includes:
+#'   none: unstandardized value is returned
+#'   one: standardize the contribution value by the size of the recipients cohort
+#'   two: standardize the contribution value by the expected contribution value of all individuals alive at the same time as the contributors cohort. For this standardization, the ids of individuals in the population that exists at the same time as the contributors cohort must be input using the focal_contemporaries argument
+#'
+#' @return the expected genetic contribution of the contributors cohort to the recipients cohort
+#' @export
+#'
+calc_gen_contr <- function(ped,
+                           contributors,
+                           recipients,
+                           focal_contemporaries = NULL,
+                           standardize = c('none', 'one', 'two')) {
+
+  if (standardize == 'two') {
+    if (is.null(focal_contemporaries))
+      stop("if standardize is set to 'two', contemporaries of contributors need to be input via the focal_contemporaries argument")
+
+    Astar_mat_contemps <- calc_Astar(ped, focal_contemporaries)
+  }
+
+  Astar_mat <- calc_Astar(ped = ped, cohort = contributors)
+
+  unstd_contr <- sum(Astar_mat[rownames(Astar_mat) %in% recipients, colnames(Astar_mat) %in% contributors])
+
+  return(
+    switch(standardize,
+           'none' = unstd_contr,
+           'one' = unstd_contr/length(recipients),
+           'two' = {
+             unstd_contr/sum(Astar_mat_contemps[rownames(Astar_mat_contemps) %in% recipients, colnames(Astar_mat_contemps) %in% focal_contemporaries])
+           }
+    )
+  )
+}
+
+
+
 
 
 ################################################
@@ -668,3 +727,276 @@ quantify_ancestry <- function(gdrop_mat_output,
 # test_kin_gdrop %>%
 #   dplyr::filter( (samp1_name == 'F8' & samp2_name == 'ID165') | (samp2_name == 'F8' & samp1_name == 'ID165'))
 
+# test_mat <- tidyr::pivot_wider(test_kin_gdrop[,c('samp1_name', 'samp2_name', 'kinship')],
+#                                names_from = c('samp2_name'),
+#                                values_from = 'kinship') %>%
+#   tibble::column_to_rownames(var = 'samp1_name') %>%
+#   as.matrix()
+#
+#
+# test_mat1 <- test_mat[match(colnames(test_mat), rownames(test_mat)),]
+#
+# test_mat1[lower.tri(test_mat1)] <- test_mat1[upper.tri(test_mat1)]
+#
+#
+#
+# values <- c(1, 2, 3)
+#
+# # Get all pairwise combinations
+# combinations <- t(combn(values, 2))
+#
+# # Add combinations with a value paired with itself
+# self_combinations <- cbind(values, values)
+#
+# # Combine the two sets of combinations
+# all_combinations <- rbind(combinations, cbind(values, values))
+#
+# # Transpose the matrix to have the desired format
+# result_matrix <- t(all_combinations)
+#
+#
+#
+# test_vec <- letters[1:5]
+#
+# rbind(t(utils::combn(test_vec, 2)),
+#       cbind(test_vec, test_vec)) %>%
+#   as.data.frame() %>%
+#   dplyr::rename(x = 1, y = 2)
+#
+#
+#
+# test_kin1 <- kinship_gdrop_mat(test_gdrop)
+#
+# test_kin1[1:8, 1:8]
+# test_kin1[5,4]
+# test_kin1[4,5]
+#
+# test_mat<-matrix(data = 1:25, 5, 5)
+# test_mat[lower.tri(test_mat)] <- NA
+#
+# test_mat[lower.tri(test_mat)] <- t(test_mat)[lower.tri(test_mat)]
+#
+# t(s)[lower.tri(s)]
+#
+# diag(test_kin1)
+#
+# s<-matrix(1:25,5)
+#
+#
+#
+# examp3_pedsim <- sim_ped_repeat_attempt(attempts = 2000,
+#                                         founders = 10,
+#                                         cycles = 8,
+#                                         start_year = 2005,
+#                                         age_mort_horizontal_shift = -1.5,
+#                                         age_mort_slope = 0.5,
+#                                         max_hatchling_survive_prob = 0.5,
+#                                         prob_pair = 0.7,
+#                                         add_immigrants = 'none',
+#                                         immigrant_vec = NULL,
+#                                         founder_age_lambda = 3,
+#                                         offspring_lambda = 2.5,
+#                                         immigrant_age = 5,
+#                                         immigrant_prob = 5,
+#                                         safeguard = 10000,
+#                                         max_pop = 5000,
+#                                         report_progress = FALSE)
+#
+# examp3_extract_ped <- extract_ped(examp3_pedsim,
+#                                   remove_nonbreeding_founders = TRUE,
+#                                   pedtools_format = TRUE)
+#
+#
+# test_gdrop <- gene_drop_matrix(ped = examp3_extract_ped,
+#                                sims = 5000,
+#                                report_progress = TRUE
+# )
+#
+#
+# quantify_ancestry <- function(gdrop_mat_output,
+#                               founder_group_info) {
+#
+#   if (!identical(rownames(gdrop_mat_output$sire), rownames(gdrop_mat_output$dam)))
+#     stop('The gene drop matrices must have the same individuals in the same order')
+#
+#
+#   ### Switched to inner_join from left_join
+#   #allele_group_map <- dplyr::left_join(gdrop_mat_output$founder_alleles,
+#   #                                     founder_group_info, by = 'id')
+#
+#   allele_group_map <- dplyr::inner_join(gdrop_mat_output$founder_alleles,
+#                                         founder_group_info, by = 'id')
+#
+#   #STEP 1:
+#   #-combine sire and dam gene drop matrices (cbind func)
+#   #-for each row (representing each individual), tally up each allele (table func)
+#   #-for the list of named vectors outputted from table, convert each vector to a dataframe
+#   # with a column of "values" (allele counts) and a column indicating the allele
+#   # labelled "ind" (stack func). Each dataframe corresponds to the alleles for
+#   #each individual
+#
+#   #STEP 2: combine the dataframes into a single dataframe (bind_rows command)
+#   #        The newly added "ind" column indicates the individual that each
+#   #        allele count corresponds to
+#
+#   #STEP 3: filter the considered alleles down to those originating from the
+#   #        groups included in the founder_group_info input
+#
+#   #STEP 4: convert allele to integer (stack func outputs it as a factor)
+#
+#   #STEP 5: join the allele count df with information about the group from which
+#   #        each allele is sourced. This information is provided by the user
+#   #        via the founder_group_info argument. The dataframes are joined along
+#   #        the allele column
+#
+#   #STEP 6: count up the number of alleles belonging to each individual/group subset
+#   #        For example, the number of alleles that individual A inherited from
+#   #        group 1
+#
+#   #STEP 7: standardize the allele counts by dividing by twice the number of simulations
+#   #        used in gene dropping. The doubling of the sim count is because we are
+#   #        working with diploid organisms in these simulations
+#   return(
+#     allele_group_membership_df <- lapply( #STEP 1
+#       apply(cbind(gdrop_mat_output$sire, gdrop_mat_output$dam), 1, table, simplify = FALSE), #STEP 1
+#       utils::stack) %>% #STEP 1
+#       dplyr::bind_rows(.id = 'id') %>% #STEP 1
+#       dplyr::rename("allele" = "ind") %>% #STEP 2
+#       dplyr::filter(allele %in% unique(allele_group_map$allele)) %>% #STEP 3
+#       dplyr::mutate("allele" = as.integer(levels(allele)[allele])) %>% #STEP 4
+#       dplyr::left_join(allele_group_map[,c('group', 'allele')], #STEP 5
+#                        by = 'allele') %>% #STEP 5
+#       dplyr::group_by(id, group) %>% #STEP 6
+#       dplyr::summarize(allele_count = sum(values), #STEP 6
+#                        .groups = 'drop') %>% #STEP 6
+#       dplyr::mutate(anc_prop = allele_count/(gdrop_mat_output$sim_count*2) ) #STEP 7
+#   )
+# }
+#
+#
+# founder_group_df <- data.frame(id = unique(test_gdrop$founder_alleles$id),
+#                                group = c('g1', 'g2', 'g3', 'g1', 'g1', 'g2')[1:5])
+#
+# #1 F1    g1
+# #2 F6    g2
+# #3 F2    g3
+# #4 F4    g1
+# #5 F7    g1
+#
+# test_calc_anc <- calc_ancestry(gdrop_mat_output = test_gdrop,
+#                                founder_group_info = founder_group_df)
+#
+#
+# test_calc_anc <- quantify_ancestry(gdrop_mat_output = test_gdrop,
+#                                    founder_group_info = founder_group_df)
+#
+#
+#
+#
+#
+# allele_group_map <- dplyr::left_join(test_gdrop$founder_alleles,
+#                                      founder_group_df, by = 'id')
+#
+# allele_group_map <- dplyr::inner_join(test_gdrop$founder_alleles,
+#                                       founder_group_df[1:2,], by = 'id')
+#
+# allele_group_membership_df <- lapply(
+#   apply(cbind(test_gdrop$sire, test_gdrop$dam), 1, table, simplify = FALSE),
+#   utils::stack) %>%
+#   dplyr::bind_rows(.id = 'id') %>%
+#   dplyr::rename("allele" = "ind") %>%
+#   dplyr::mutate("allele" = as.integer(levels(allele)[allele])) %>%
+#   dplyr::left_join(allele_group_map[,c('group', 'allele')],
+#                    by = 'allele') %>%
+#   dplyr::group_by(id, group) %>%
+#   dplyr::summarize(allele_count = sum(values),
+#                    .groups = 'drop') %>%
+#   dplyr::mutate(anc_prop = allele_count/(test_gdrop$sim_count*2))
+#
+#
+#
+#
+#
+# test_gdrop$founder_alleles
+#
+# allele_group_membership_df %>%
+#   dplyr::mutate("allele" = as.integer(levels(allele)[allele])) #%>%
+#
+# levels(allele_group_membership_df$allele)
+#
+# as.numeric(levels(f))[f]
+#
+# allele_group_membership_df
+#
+#
+# as.integer(levels(allele_group_membership_df$allele))
+#
+# test_kin1 <- kinship_gdrop_mat(test_gdrop, output = c('matrix', 'dataframe')[1])
+#
+#
+# test_mat <- tidyr::pivot_wider(test_kin1[,c('samp1_name', 'samp2_name', 'kinship')],
+#                                names_from = c('samp2_name'),
+#                                values_from = 'kinship') %>%
+#   tibble::column_to_rownames(var = 'samp1_name') %>%
+#   as.matrix()
+#
+#
+# test_mat[match(colnames(test_mat), rownames(test_mat)),]
+#
+#
+#
+#
+#
+#
+# test_kin1[9,3]
+# test_kin1[3,9]
+#
+# tail(test_kin1)
+#
+#
+# any(is.na(test_kin1$kinship))
+#
+#
+#
+#
+# buildped<-function(founders=50,fert=2.0,ngen=2){
+#   nf<- founders
+#   sanc<-nf #sum of ancestors
+#   ni<-nf #number of inds each generation
+#   parents<-1:nf
+#   #ncoup<-nf %/% 2 #monogamy
+#   ped<-data.frame(ind=1:nf,mum=rep(NA,nf),dad=rep(NA,nf))
+#
+#   draw.parents<-function(parents,fert,sanc){
+#     ncoup<-length(parents) %/% 2
+#     nbabs<-rpois(ncoup,fert)
+#     allbabs<-sum(nbabs)
+#     thisgen.ped<-data.frame(ind=integer(allbabs),
+#                             mum=integer(allbabs),
+#                             dad=integer(allbabs))
+#     for (ic in 1:ncoup){
+#       if(nbabs[ic]>0){
+#         # no selfing, monogamy, but can reuse parents
+#         par.drawn<-sample(parents,size=2,replace=FALSE)
+#         #  parents<-parents[-par.drawn]
+#         nbabsc<-c(0,cumsum(nbabs))
+#         x<-(nbabsc[ic]+1):nbabsc[ic+1]
+#         thisgen.ped[x,]<-cbind(sanc+x,rep(par.drawn[1],nbabs[ic]),
+#                                rep(par.drawn[2],nbabs[ic]))
+#       }
+#     }
+#     return(thisgen.ped)
+#   }
+#
+#   for (igen in 1:ngen){
+#     thisgen.ped<-draw.parents(parents,fert,sanc)
+#     ped<-rbind(ped,thisgen.ped)
+#     ni<-c(ni,dim(thisgen.ped)[1])
+#     sanc<-sum(ni)
+#     parents<-(sum(ni[1:igen])+1):sanc
+#   }
+#   return(ped)
+# }
+#
+#
+# test_buildped <- buildped(founders = 10, fert = 2.0, ngen = 5)

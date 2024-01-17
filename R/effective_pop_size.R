@@ -77,7 +77,7 @@ calc_ped_Ne <- function(ped,
   #=====================================
   #=== INITIAL PROCESSING AND CHECKS ===
   #=====================================
-  if (is.null(NULL))
+  if (is.null(coanc_mat))
     coanc_mat <- calc_pedmat(ped = ped, type = 'kinship')
 
   if (is.null(eqg)) {

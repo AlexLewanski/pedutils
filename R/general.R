@@ -173,6 +173,24 @@ get_offspring <- function(ped, indiv_vec, include_repeats = TRUE) {
 }
 
 
+#' Extract the founders from a pedigree
+#'
+#' @param ped a pedigree object
+#' @param founder_vals the founder values
+#'
+#' @return a list with the founders and partial founders (the individuals with only one known parent)
+#' @export
+#'
+get_founders <- function(ped, founder_vals = '0') {
+  founder_list <- list()
+  founder_list[['founders']] <- ped[apply(ped[,c(2,3)], 1, function(x) all(x %in% '0')),1,drop=TRUE]
+  founder_list[['partial_founders']] <- ped[apply(ped[,c(2,3)], 1, function(x) sum(x %in% '0') == 1),1,drop=TRUE]
+  founder_list[sapply(founder_list, function(x) length(x) == 0)] <- 'none'
+
+  return(founder_list)
+}
+
+
 
 #' Subset pedigree down to a focal set of individuals and their descendants
 #'
